@@ -15,12 +15,13 @@ import sys
 import numpy as np
 from astropy import units as u
 from astropy.table import QTable
+
 # from astropy.coordinates import sky_coordinate
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 
-def generate_truth_catalog(n_sources: int, ra_range: tuple, dec_range: tuple) -> QTable :
+def generate_truth_catalog(n_sources: int, ra_range: tuple, dec_range: tuple) -> QTable:
     """Generate a QTable containing sky coordinates in a certain range
 
     Args:
@@ -33,26 +34,50 @@ def generate_truth_catalog(n_sources: int, ra_range: tuple, dec_range: tuple) ->
     """
 
     qt = QTable()
-    qt['index'] = np.linspace(0, n_sources - 1, n_sources, dtype=int)
+    qt["index"] = np.linspace(0, n_sources - 1, n_sources, dtype=int)
 
     ra = np.random.uniform(*ra_range, n_sources)
-    qt['ra'] = ra * u.deg
+    qt["ra"] = ra * u.deg
 
-    dec_temp = np.arcsin(2*np.random.uniform(size=n_sources) - 1) + (np.pi / 2.0)
+    dec_temp = np.arcsin(2 * np.random.uniform(size=n_sources) - 1) + (np.pi / 2.0)
     len_dec = dec_range[1] - dec_range[0]
     dec = (len_dec / np.pi) * dec_temp + dec_range[0]
-    qt['dec'] = dec * u.deg
+    qt["dec"] = dec * u.deg
 
     return qt
 
 
+def add_astrometric_noise(truth_table: QTable, sigma: u.arcsec) -> QTable:
+    """Takes a table and simulate an observation (Gaussian)
+
+    Args:
+        truth_table (QTable): Contain sky coordinates
+        sigma (u.arcsec): Arg for the gaussian noise
+
+    Returns:
+        QTable: Table of coordinates with Gaussian noise
+    """
+
+    qt = QTable()
+    qt["index"] = truth_table["index"]
+
+    ra_noise = np.random.normal(truth_table["ra"], sigma) * u.deg
+    qt["ra"] = ra_noise
+
+    dec_noise = np.random.normal(truth_table["dec"], sigma) * u.deg
+    qt["dec"] = dec_noise
+
+    return qt
 
 
-# EXECUTION :
+# TEST :
 
-nb = 20
+NBR = 20
 ra_ = (10, 15)
 dec_ = (45, 50)
 
-qt_ = generate_truth_catalog(nb, ra_, dec_)
-print(qt_)
+qt_1 = generate_truth_catalog(NBR, ra_, dec_)
+qt_2 = add_astrometric_noise(qt_1, 0.5)
+
+print("qt1 : ", qt_1)
+print("qt2 : ", qt_2)
