@@ -14,30 +14,36 @@ import numpy as np
 from astropy import units as u
 from astropy.table import QTable
 
-# from astropy.coordinates import sky_coordinate
+rng = np.random.default_rng(seed=42)
 
-
-def generate_truth_catalog(n_sources: int, ra_range: tuple, dec_range: tuple) -> QTable:
+def generate_truth_catalog(n_sources: int, ra_range: u.Quantity, dec_range: u.Quantity) -> QTable:
     """Generate a QTable containing sky coordinates in a certain range
 
     Args:
         n_sources (int): number of coordinates
-        ra_range (tuple): Limites of the coordinates (ra_min, ra_max) - deg
-        dec_range (tuple): Limites of the coordinates (dec_min, dec_max) - deg
+        ra_range (u.Quantity): Limites of the coordinates (ra_min, ra_max) - deg
+        dec_range (u.Quantity): Limites of the coordinates (dec_min, dec_max) - deg
 
     Returns:
         QTable: Catalog of coordinates containing : (index, ra, dec)
     """
 
     qt = QTable()
-    qt["index"] = np.linspace(0, n_sources - 1, n_sources, dtype=int)
+    qt["index"] = np.arange(n_sources)
 
-    ra = np.random.uniform(*ra_range, n_sources)
+    # ra :
+    ra_min = ra_range.to(u.deg).value[0]
+    ra_max = ra_range.to(u.deg).value[1]
+    ra = rng.uniform(ra_min, ra_max, n_sources)
     qt["ra"] = ra * u.deg
 
+    # dec :
+    dec_min = dec_range.to(u.deg).value[0]
+    dec_max = dec_range.to(u.deg).value[1]
     # Uniform in sin(dec) :
-    smin, smax = np.sin(np.deg2rad(dec_range))
-    dec_temp = np.random.uniform(smin, smax, n_sources)
+    smin = np.sin(np.deg2rad(dec_min))
+    smax = np.sin(np.deg2rad(dec_max))
+    dec_temp = rng.uniform(smin, smax, n_sources)
     dec = np.rad2deg(np.arcsin(dec_temp))
     qt['dec'] = dec * u.deg
 
@@ -60,10 +66,10 @@ def add_astrometric_noise(truth_table: QTable, sigma: u.arcsec) -> QTable:
 
     # Convergence of meridians :
     sigma_ra = sigma / np.cos(truth_table['dec'].to(u.rad))
-    ra_noise = np.random.normal(truth_table["ra"], sigma_ra.to(u.deg))
+    ra_noise = rng.normal(truth_table["ra"], sigma_ra.to(u.deg))
     qt["ra"] = ra_noise * u.deg
 
-    dec_noise = np.random.normal(truth_table["dec"], sigma.to(u.deg))
+    dec_noise = rng.normal(truth_table["dec"], sigma.to(u.deg))
     qt["dec"] = dec_noise * u.deg
 
     return qt
@@ -76,8 +82,8 @@ def add_astrometric_noise(truth_table: QTable, sigma: u.arcsec) -> QTable:
 
 if __name__ == '__main__':
     NBR = 20
-    ra_ = (10, 15)
-    dec_ = (45, 50)
+    ra_ = np.array((10, 15)) * u.deg
+    dec_ = np.array((45, 50)) * u.deg
     sigma_ = 100 * u.arcsec
 
     qt_1 = generate_truth_catalog(NBR, ra_, dec_)
