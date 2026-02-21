@@ -59,7 +59,7 @@ def add_astrometric_noise(truth_table: QTable, sigma: u.arcsec) -> QTable:
     qt["index"] = truth_table["index"]
 
     # Convergence of meridians :
-    sigma_ra = sigma / np.cos(truth_table['dec'])
+    sigma_ra = sigma / np.cos(truth_table['dec'].to(u.rad))
     ra_noise = np.random.normal(truth_table["ra"], sigma_ra.to(u.deg))
     qt["ra"] = ra_noise * u.deg
 
