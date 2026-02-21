@@ -3,7 +3,7 @@ Generation of test datas.
 
 @Author         : Doxy_316
 @Date           : 19/02/2026
-@last update    : 20/02/2026
+@last update    : 21/02/2026
 
 Functions :
     - generate_truth_catalog()
@@ -74,13 +74,14 @@ def add_astrometric_noise(truth_table: QTable, sigma: u.arcsec) -> QTable:
 
 # TEST :
 
-NBR = 20
-ra_ = (10, 15)
-dec_ = (45, 50)
-sigma_ = 100 * u.arcsec
+if __name__ == '__main__':
+    NBR = 20
+    ra_ = (10, 15)
+    dec_ = (45, 50)
+    sigma_ = 100 * u.arcsec
 
-qt_1 = generate_truth_catalog(NBR, ra_, dec_)
-qt_2 = add_astrometric_noise(qt_1, sigma_)
+    qt_1 = generate_truth_catalog(NBR, ra_, dec_)
+    qt_2 = add_astrometric_noise(qt_1, sigma_)
 
-print("qt1 : \n", qt_1)
-print("qt2 : \n", qt_2)
+    print("qt1 : \n", qt_1)
+    print("qt2 : \n", qt_2)
