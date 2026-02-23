@@ -3,7 +3,7 @@ Generation of test datas.
 
 @Author         : Doxy_316
 @Date           : 19/02/2026
-@last update    : 21/02/2026
+@last-update    : 21/02/2026
 
 Functions :
     - generate_truth_catalog()
@@ -14,7 +14,10 @@ import numpy as np
 from astropy import units as u
 from astropy.table import QTable
 
+
 rng = np.random.default_rng(seed=42)
+
+
 
 def generate_truth_catalog(n_sources: int, ra_range: u.Quantity, dec_range: u.Quantity) -> QTable:
     """Generate a QTable containing sky coordinates in a certain range
