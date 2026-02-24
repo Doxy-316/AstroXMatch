@@ -3,7 +3,7 @@ Matching between two catalog of stars
 
 @Author         : Doxy_316
 @Date           : 22/02/2026
-@last-update    : 23/02/2026
+@last-update    : 24/02/2026
 
 functions :
     - cross_match()
@@ -23,37 +23,30 @@ from catalog_utils import generate_truth_catalog, add_astrometric_noise
 ##### -------------- #####
 
 
-def cross_match(catalog_a: QTable, catalog_b: QTable, radius: u.Quantity) -> QTable :
-    """Matching stars between 2 catalogs with a maximum distance
+def cross_match(ref_catalog: QTable, target_catalog: QTable, radius: u.Quantity) -> QTable :
+    """Matching stars between 2 catalogs
 
     Args:
-        catalog_a (QTable): Table with colomns 'id', 'ra', 'dec' (Truth)
-        catalog_b (QTable): Table with colomns 'id', 'ra', 'dec' (Data)
+        ref_catalog     (QTable): Table with colomns 'id', 'ra', 'dec'
+        target_catalog  (QTable): Table with colomns 'id', 'ra', 'dec'
         radius (u.Quantity): max gap between two matched stars
 
     Returns:
         QTable: Table with index of matched stars and their distance
     """
 
-    ra_truth = catalog_a['ra'].to(u.deg)
-    dec_truth = catalog_a['dec'].to(u.deg)
-    c_truth = SkyCoord(ra_truth, dec_truth, frame='icrs')
+    coords_ref = SkyCoord(ra=ref_catalog['ra'], dec=ref_catalog['dec'])
+    coords_target = SkyCoord(ra=target_catalog['ra'], dec=target_catalog['dec'])
 
-    ra_data = catalog_b['ra'].to(u.deg)
-    dec_data = catalog_b['dec'].to(u.deg)
-    c_data = SkyCoord(ra_data, dec_data, frame='icrs')
+    idx, sep_2d, _ = coords_target.match_to_catalog_sky(coords_ref)
 
-    match_result = c_truth.match_to_catalog_sky(c_data, nthneighbor=1)
-    angular_separation = match_result[1]
+    mask = sep_2d < radius.to(u.deg)
 
-    dist_mask = (angular_separation < radius.to(u.deg))
+    results = target_catalog[mask].copy()
+    results['ref_index'] = idx[mask]
+    results['angular_sep'] = sep_2d[mask]
 
-    qt = QTable()
-    idx = catalog_a['index']
-    qt['index'] = idx[dist_mask]
-    qt['angular_separation'] = angular_separation[dist_mask]
-
-    return qt
+    return results[['index', 'ref_index', 'angular_sep']]
 
 
 
@@ -63,19 +56,18 @@ def cross_match(catalog_a: QTable, catalog_b: QTable, radius: u.Quantity) -> QTa
 
 
 if __name__ == '__main__':
-    NBR = 20
-    ra_ = np.array((10, 15)) * u.deg
-    dec_ = np.array((45, 50)) * u.deg
-    sigma_ = 100 * u.arcsec
-    max_radius = 70 * u.arcsec
+    n_stars = 20
+    ra_range = np.array((10, 15)) * u.deg
+    dec_range = np.array((45, 50)) * u.deg
+    sigma_ = 10 * u.arcsec
+    max_radius = 10 * u.arcsec
     rng = np.random.default_rng(seed=42)
 
-    qt_truth = generate_truth_catalog(NBR, ra_, dec_)
+    qt_truth = generate_truth_catalog(n_stars, ra_range, dec_range)
     qt_data = add_astrometric_noise(qt_truth, sigma_)
 
-    # qt_matched = 
-    qt_matched = cross_match(qt_data, qt_truth, max_radius)
+    matched_table = cross_match(qt_truth, qt_data, max_radius)
 
     # print("\nqt_truth : \n", qt_truth)
     # print("\nqt_data : \n", qt_data)
-    print("\nqt_matched : \n", qt_matched)
+    print("\nmatched_table : \n", matched_table)
